@@ -28,7 +28,7 @@ Pytorch.
 <img src="Actual_vs_Predicted_Values15.png" alt="" width="400"/> Scatter plot
 
 # Training
-<img src="Actual_vs_Predicted_Values15.png" alt="" width="400"/> Scatter plot
+<img src="Trainingloss_pca15.png" alt="" width="400"/> Scatter plot
 
 # SSC prediction 📷
 
