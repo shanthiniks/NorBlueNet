@@ -24,9 +24,9 @@ This approach combines the precision of hyperspectral imaging with the predictiv
 
 Pytorch.
 
-# Result 📷
+# SSC prediction 📷
 
-<img src="D2T5P1_before.png" alt="" width="100"/> Unbruised
+<img src="Actual_vs_Predicted_Values15.png" alt="" width="400"/> Scatter plot
 
 # Code Release 📂
 
