@@ -24,6 +24,10 @@ This approach combines the precision of hyperspectral imaging with the predictiv
 
 Pytorch.
 
+# Result 📷
+
+<img src="D2T5P1_before.png" alt="" width="100"/> Unbruised
+
 # Code Release 📂
 
 The full code will be made available following the publication of the paper.
