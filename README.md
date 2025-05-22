@@ -41,6 +41,14 @@ https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
 
 https://www.sciencedirect.com/science/article/pii/S0168169925004466
 
+For executing the code, follow the sequence
+1. Main
+2. Preprocessing
+3. Create model
+4. Training
+5. Validation
+   
+
 
 
 
