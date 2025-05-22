@@ -9,6 +9,15 @@
 NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries
 Shanthini K.S., Sudhish N. George, Athul Chandran O.V, Jinimol K.M., Keerthana P., Jobin Francis and Sony George.
 
+This code is based on the paper 
+
+"NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), Computers and Electronics in Agriculture, 235, 110340.
+
+https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
+
+https://www.sciencedirect.com/science/article/pii/S0168169925004466
+
+
   #  Key Features 🔑 
 A novel hybrid CNN-transformer architecture, synergistically integrating convolutional layers’ spatial detail with transformers’ long-range dependency modelling capabilities.
 
@@ -32,14 +41,6 @@ Pytorch.
 <img src="Actual_vs_Predicted_Values15.png" alt="" width="400"/> Scatter plot
 
 # Code  📂
-
-This code is based on the paper 
-
-Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), "NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", Computers and Electronics in Agriculture, 235, 110340.
-
-https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
-
-https://www.sciencedirect.com/science/article/pii/S0168169925004466
 
 For executing the code, follow the sequence
 1. Main
