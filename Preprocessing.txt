@@ -1,0 +1,153 @@
+
+# Preprocessing 
+
+import os
+import re
+import h5py
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+
+def load_dataset(folder_path, csv_file_path, num_components=15):
+    # Load the CSV file containing the corresponding values
+    csv_data = pd.read_csv(csv_file_path)
+
+    # Extract the second column of the CSV file (assuming index 1 is the second column)
+    csv_values = csv_data.iloc[:, 1].values
+
+    # Initialize list to store HDF5 data and corresponding filenames
+    hdf5_data = []
+    hdf5_filenames = []
+
+    # Define a function to extract numerical parts from filenames for proper sorting
+    def natural_key(filename):
+        return [int(text) if text.isdigit() else text for text in re.split(r'(\d+)', filename)]
+
+    # Get the list of HDF5 files and sort them using the natural key
+    hdf5_files = sorted([file for file in os.listdir(folder_path) if file.endswith('.h5')], key=natural_key)
+
+    # Loop through the sorted HDF5 files
+    for file_name in hdf5_files:
+        file_path = os.path.join(folder_path, file_name)
+        with h5py.File(file_path, 'r') as f:
+            # Iterate through keys to find the correct dataset name
+            for key in f.keys():
+                data = f[key][()]  # Try reading with the found key
+                hdf5_data.append(data)
+                hdf5_filenames.append(file_name)
+
+    # Stack the individual NumPy arrays into a single array
+    if len(hdf5_data) > 0:
+        hdf5_data = np.stack(hdf5_data, axis=0)  # Stack the arrays
+    else:
+        raise ValueError("No HDF5 data found in the specified folder.")
+
+    # Reshape the data for PCA: (num_samples, height, width, num_bands) to (num_samples*height*width, num_bands)
+    num_samples, height, width, num_bands = hdf5_data.shape
+    reshaped_data = hdf5_data.reshape(-1, num_bands)
+
+    # Apply PCA
+    pca = PCA(n_components=num_components)
+    pca_data = pca.fit_transform(reshaped_data)
+
+    # Reshape back to original shape but with reduced bands
+    pca_data = pca_data.reshape(num_samples, height, width, num_components)
+
+    # Print the significant bands
+    components = pca.components_
+    significant_bands = np.argsort(-np.abs(components), axis=1)[:, :num_components]
+    
+    for i, component in enumerate(significant_bands):
+        print(f"Principal Component {i + 1}: Significant Bands: {component}")
+
+    # Check the number of samples loaded from HDF5 files
+    print("Number of samples loaded from HDF5 files:", len(pca_data))
+
+    # Check the number of samples loaded from the CSV file
+    print("Number of samples loaded from CSV file:", len(csv_values))
+
+    # Check data consistency
+    num_samples_hdf5 = pca_data.shape[0]
+    num_samples_csv = len(csv_values)
+    if num_samples_hdf5 != num_samples_csv:
+        raise ValueError("Mismatched number of samples between HDF5 files and CSV data.")
+
+    return pca_data, csv_values, hdf5_filenames, csv_data
+
+num_components = 15  # Number of principal components to keep
+
+hdf5_data, csv_values, hdf5_filenames, csv_data = load_dataset(hdf5_folder_path, csv_file_path, num_components)
+
+# Verify the loaded data
+print("Shape of HDF5 data array:", hdf5_data.shape)
+print("Number of samples loaded from HDF5 files:", len(hdf5_data))
+print("Number of samples loaded from CSV file:", len(csv_values))
+
+
+#Data Augmentation
+
+def augment_and_replicate_data(pca_data, csv_values, pca_filenames, augmentation, n_augmentations=1):
+    augmented_pca_data = []
+    augmented_csv_values = []
+    augmented_filenames = []
+
+    for idx in range(len(pca_data)):
+        original_data = pca_data[idx]
+        original_csv_value = csv_values[idx]
+        original_filename = pca_filenames[idx]
+
+        # Append original data and corresponding CSV value
+        augmented_pca_data.append(original_data)
+        augmented_csv_values.append(original_csv_value)
+        augmented_filenames.append(f"{original_filename}_original")
+
+        # Apply augmentation n_augmentations times to the original data
+        for aug_idx in range(n_augmentations):
+            augmented_data = augmentation.augment_image(original_data)
+            augmented_pca_data.append(augmented_data)
+            augmented_csv_values.append(original_csv_value)
+            augmented_filenames.append(f"{original_filename}_aug{aug_idx+1}")
+
+    # Convert lists to NumPy arrays
+    augmented_pca_data = np.array(augmented_pca_data)
+    augmented_csv_values = np.array(augmented_csv_values)
+
+    return augmented_pca_data, augmented_csv_values, augmented_filenames
+
+
+# Load dataset with PCA
+pca_data, csv_values, hdf5_filenames, csv_data = load_dataset(hdf5_folder_path, csv_file_path, num_components)
+train_data, test_data, train_labels, test_labels, train_filenames, test_filenames = train_test_split(pca_data, csv_values, hdf5_filenames, test_size=0.2, random_state=42)
+
+# Define augmentation pipeline
+augmentation = iaa.Sequential([
+    iaa.Affine(translate_px={"x": (-10, 10), "y": (-10, 10)}),  # Translation
+    iaa.Affine(rotate=(-25, 25)),  # Rotation
+    iaa.Affine(scale=(0.8, 1.2)),  # Scaling
+    iaa.Fliplr(0.5)  # Flipping
+])
+
+# Number of augmentations per original sample
+n_augmentations = 20
+
+# Augment and replicate data
+augmented_pca_data, augmented_csv_values, augmented_filenames = augment_and_replicate_data(train_data, train_labels, train_filenames, augmentation, n_augmentations)
+
+# Verify shapes and consistency after augmentation
+print("Augmented PCA data shape:", augmented_pca_data.shape)
+print("Augmented CSV data shape:", augmented_csv_values.shape)
+
+# Verification of consistency
+if augmented_pca_data.shape[0] == len(augmented_csv_values):
+    print("Number of samples matches between augmented PCA data and augmented CSV data.")
+else:
+    print("Mismatched number of samples between augmented PCA data and augmented CSV data.")
+
+# Print first 10 corresponding PCA data and CSV values
+for i, (filename, data, csv_value) in enumerate(zip(augmented_filenames, augmented_pca_data, augmented_csv_values)):
+    if i >= 10:
+        break
+    print(f"Filename {i+1}: {filename}")
+    print(f"Augmented PCA Data {i+1}: {data.shape}")
+    print(f"Augmented CSV Value {i+1}: {csv_value}")
+    print("---")

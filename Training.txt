@@ -1,0 +1,190 @@
+
+#Training
+
+import threading
+import sys
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+import matplotlib.pyplot as plt
+import random
+
+# Define metrics
+def calculate_r2(targets, predictions):
+    return r2_score(targets, predictions)
+
+def calculate_rmse(targets, predictions):
+    return np.sqrt(mean_squared_error(targets, predictions))
+
+def calculate_rpd(targets, predictions):
+    return np.std(targets) / calculate_rmse(targets, predictions)
+
+# Function to listen for manual stop input
+def listen_for_stop():
+    global manual_stop
+    input("Press Enter to stop training...\n")
+    manual_stop = True
+
+# Function for testing the model
+def test_model(test_loader, model, device):
+    model.eval()
+    test_predictions = []
+    test_targets = []
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            test_predictions.extend(output.cpu().numpy().flatten())
+            test_targets.extend(target.cpu().numpy().flatten())
+    
+    test_r2 = calculate_r2(np.array(test_targets), np.array(test_predictions))
+    test_rmse = calculate_rmse(np.array(test_targets), np.array(test_predictions))
+    test_rpd = calculate_rpd(np.array(test_targets), np.array(test_predictions))
+    print(f"Test R²: {test_r2:.2f}, Test RMSE: {test_rmse:.4f}, Test RPD: {test_rpd:.4f}")
+    
+    return test_r2, test_rmse, test_rpd
+
+# Start the manual stop listener in a separate thread
+manual_stop = False
+stop_thread = threading.Thread(target=listen_for_stop)
+stop_thread.start()
+
+try:
+    # Example data loading and augmentation (replace with actual functions)
+    augmented_pca_data, augmented_csv_values, augmented_filenames = augment_and_replicate_data(train_data, train_labels, train_filenames, augmentation, n_augmentations)
+
+    # Prepare data
+    X = augmented_pca_data
+    y = augmented_csv_values.reshape(-1, 1)
+    
+    # Split the data into train (60%), val (20%), and test (20%)
+    X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.4, random_state=42)
+    X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+
+    # Convert to PyTorch tensors
+    X_train_tensor = torch.tensor(X_train, dtype=torch.float32).permute(0, 3, 1, 2)
+    X_val_tensor = torch.tensor(X_val, dtype=torch.float32).permute(0, 3, 1, 2)
+    X_test_tensor = torch.tensor(X_test, dtype=torch.float32).permute(0, 3, 1, 2)
+    
+    y_train_tensor = torch.tensor(y_train, dtype=torch.float32)
+    y_val_tensor = torch.tensor(y_val, dtype=torch.float32)
+    y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
+
+    # Create datasets and data loaders
+    train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+    val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
+    test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+
+    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+    # Model and optimization setup
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    combined_model = CombinedModel().to(device)
+    optimizer = optim.AdamW(combined_model.parameters(), lr=0.01, weight_decay=0.1)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.65, patience=20, verbose=True)
+    criterion = nn.HuberLoss(delta=1)
+
+    patience = 40
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
+    early_stop = False
+    num_epochs = 1000
+
+    # Initialize lists to store the metrics for plotting
+    train_loss_list = []
+    val_loss_list = []
+    train_r2s = []
+    val_r2s = []
+    train_rmses = []
+    val_rmses = []
+    train_rpds = []
+    val_rpds = []
+
+    # Start training loop
+    for epoch in range(num_epochs):
+        if early_stop or manual_stop:
+            print(f"Early stopping at epoch {epoch}")
+            break
+        
+        combined_model.train()
+        running_loss = 0.0
+        epoch_train_targets = []
+        epoch_train_predictions = []
+
+        for data, target in train_loader:
+            data, target = data.to(device), target.to(device)
+            optimizer.zero_grad()
+            output = combined_model(data)
+            loss = criterion(output, target)
+            loss.backward()
+            nn.utils.clip_grad_norm_(combined_model.parameters(), max_norm=1.0)
+            optimizer.step()
+
+            running_loss += loss.item()
+            epoch_train_predictions.extend(output.detach().cpu().numpy().flatten())
+            epoch_train_targets.extend(target.detach().cpu().numpy().flatten())
+
+        train_loss = running_loss / len(train_loader)
+        train_r2 = calculate_r2(np.array(epoch_train_targets), np.array(epoch_train_predictions))
+        train_rmse = calculate_rmse(np.array(epoch_train_targets), np.array(epoch_train_predictions))
+        train_rpd = calculate_rpd(np.array(epoch_train_targets), np.array(epoch_train_predictions))
+
+        combined_model.eval()
+        val_loss = 0.0
+        epoch_val_targets = []
+        epoch_val_predictions = []
+
+        with torch.no_grad():
+            for data, target in val_loader:
+                data, target = data.to(device), target.to(device)
+                output = combined_model(data)
+                val_loss += criterion(output, target).item()
+                epoch_val_predictions.extend(output.detach().cpu().numpy().flatten())
+                epoch_val_targets.extend(target.detach().cpu().numpy().flatten())
+
+        val_loss /= len(val_loader)
+        val_r2 = calculate_r2(np.array(epoch_val_targets), np.array(epoch_val_predictions))
+        val_rmse = calculate_rmse(np.array(epoch_val_targets), np.array(epoch_val_predictions))
+        val_rpd = calculate_rpd(np.array(epoch_val_targets), np.array(epoch_val_predictions))
+        scheduler.step(val_loss)
+
+        print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Train R²: {train_r2:.2f}, Val R²: {val_r2:.2f}, Train RMSE: {train_rmse:.4f}, Val RMSE: {val_rmse:.4f}, Train RPD: {train_rpd:.4f}, Val RPD: {val_rpd:.4f}")
+
+        # Store metrics for plotting
+        train_loss_list.append(train_loss)
+        val_loss_list.append(val_loss)
+        train_r2s.append(train_r2)
+        val_r2s.append(val_r2)
+        train_rmses.append(train_rmse)
+        val_rmses.append(val_rmse)
+        train_rpds.append(train_rpd)
+        val_rpds.append(val_rpd)
+
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            epochs_no_improve = 0
+            torch.save(combined_model.state_dict(), 'Project/models/Testing_SSRN_with_PCA-15.pth')
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= patience:
+                early_stop = True
+
+        # Test the model at the end of every epoch
+        print(f"\nTesting after epoch {epoch + 1}:")
+        test_r2, test_rmse, test_rpd = test_model(test_loader, combined_model, device)
+
+    # Load and test the best model after training
+    combined_model.load_state_dict(torch.load('Project/models/Testing_SSRN_with_PCA-15.pth'))
+    print("\nFinal Test Metrics with Best Model:")
+    test_r2, test_rmse, test_rpd = test_model(test_loader, combined_model, device)
+
+finally:
+    manual_stop = True
+    stop_thread.join()
+

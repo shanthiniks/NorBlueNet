@@ -1,0 +1,185 @@
+#Creating a CNN Model
+import torch
+import torch.nn as nn
+from torchsummary import summary
+
+# Define SSRN model with Dropout and Batch Normalization
+class SSRN(nn.Module):
+    def __init__(self, dropout_rate=0.25):
+        super(SSRN, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=15, out_channels=32, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
+        self.relu1 = nn.ReLU()
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout1 = nn.Dropout(dropout_rate)
+
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+        self.relu2 = nn.ReLU()
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout2 = nn.Dropout(dropout_rate)
+
+        self.conv3 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+        self.relu3 = nn.ReLU()
+        self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout3 = nn.Dropout(dropout_rate)
+
+        self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.bn4 = nn.BatchNorm2d(256)
+        self.relu4 = nn.ReLU()
+        self.maxpool4 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout4 = nn.Dropout(dropout_rate)
+
+        self.flatten = nn.Flatten()
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
+        x = self.dropout1(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.relu2(x)
+        x = self.maxpool2(x)
+        x = self.dropout2(x)
+
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.relu3(x)
+        x = self.maxpool3(x)
+        x = self.dropout3(x)
+
+        x = self.conv4(x)
+        x = self.bn4(x)
+        x = self.relu4(x)
+        x = self.maxpool4(x)
+        x = self.dropout4(x)
+
+        x = self.flatten(x)
+        return x
+
+# Create SSRN model instance with a custom dropout rate
+dropout_rate = 0.35  # You can change this value to adjust the dropout rate
+ssrn_model = SSRN(dropout_rate=dropout_rate)
+
+# Move model to GPU if available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+ssrn_model.to(device)
+
+# Print SSRN model summary
+summary(ssrn_model, (15, 40, 40))
+
+# Calculate the output dimension of the flatten layer
+sample_input = torch.randn(1, 15, 40, 40).to(device)
+flatten_output = ssrn_model(sample_input)
+print(f"Flatten layer output dimension: {flatten_output.size(1)}")
+
+# Define ViT model
+class VisionTransformer(nn.Module):
+    def __init__(self, input_dim=1024, emb_size=128, num_layers=4, num_heads=4, num_classes=1, dropout=0.1):
+        super(VisionTransformer, self).__init__()
+        self.embedding = nn.Linear(input_dim, emb_size)
+        self.cls_token = nn.Parameter(torch.randn(1, 1, emb_size))
+        self.pos_embedding = nn.Parameter(torch.randn(1, 1 + input_dim, emb_size))
+        self.dropout = nn.Dropout(dropout)
+        self.transformer_blocks = nn.ModuleList([
+            TransformerBlock(emb_size, num_heads, dropout=dropout) for _ in range(num_layers)
+        ])
+        self.mlp_head = nn.Sequential(
+            nn.LayerNorm(emb_size),
+            nn.Linear(emb_size, num_classes)
+        )
+
+    def forward(self, x):
+        batch_size = x.size(0)
+        x = self.embedding(x)
+        cls_tokens = self.cls_token.expand(batch_size, -1, -1)
+        x = torch.cat((cls_tokens, x.unsqueeze(1)), dim=1)
+        x = x + self.pos_embedding[:, :x.size(1), :]
+        x = self.dropout(x)
+
+        for block in self.transformer_blocks:
+            x = block(x)
+
+        x = x[:, 0]
+        x = self.mlp_head(x)
+        return x
+
+# Define MultiHeadAttention and TransformerBlock classes
+class MultiHeadAttention(nn.Module):
+    def __init__(self, emb_size, num_heads):
+        super(MultiHeadAttention, self).__init__()
+        self.emb_size = emb_size
+        self.num_heads = num_heads
+        self.qkv = nn.Linear(emb_size, emb_size * 3)
+        self.fc = nn.Linear(emb_size, emb_size)
+
+    def forward(self, x):
+        batch_size, n_patches, emb_size = x.size()
+        qkv = self.qkv(x)
+        qkv = qkv.view(batch_size, n_patches, self.num_heads, 3 * emb_size // self.num_heads)
+        qkv = qkv.permute(0, 2, 1, 3).contiguous()
+        q, k, v = qkv.chunk(3, dim=-1)
+
+        scores = q @ k.transpose(-2, -1) / (emb_size ** 0.5)
+        attn = torch.softmax(scores, dim=-1)
+        context = attn @ v
+        context = context.permute(0, 2, 1, 3).contiguous()
+        context = context.view(batch_size, n_patches, emb_size)
+
+        out = self.fc(context)
+        return out
+
+class TransformerBlock(nn.Module):
+    def __init__(self, emb_size, num_heads, ff_hidden_mult=4, dropout=0.1):
+        super(TransformerBlock, self).__init__()
+        self.norm1 = nn.LayerNorm(emb_size)
+        self.norm2 = nn.LayerNorm(emb_size)
+        self.mha = MultiHeadAttention(emb_size, num_heads)
+        self.ff = nn.Sequential(
+            nn.Linear(emb_size, ff_hidden_mult * emb_size),
+            nn.ReLU(),
+            nn.Linear(ff_hidden_mult * emb_size, emb_size),
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        x = x + self.dropout(self.mha(self.norm1(x)))
+        x = x + self.dropout(self.ff(self.norm2(x)))
+        return x
+
+# Create an instance of VisionTransformer
+vit_model = VisionTransformer()
+
+# Move model to GPU if available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+vit_model.to(device)
+
+# Print ViT model summary
+summary(vit_model, (1024,))
+
+# Define Combined Model
+class CombinedModel(nn.Module):
+    def __init__(self):
+        super(CombinedModel, self).__init__()
+        self.ssrn = SSRN()  # Define your SSRN model separately
+        self.vit = VisionTransformer()  # Update based on SSRN output
+
+    def forward(self, x):
+        x = self.ssrn(x)  # Pass through SSRN
+        x = x.view(x.size(0), -1)  # Flatten the output for ViT
+        x = self.vit(x)  # Pass through ViT
+        return x
+
+# Create an instance of CombinedModel
+combined_model = CombinedModel()
+
+# Move model to GPU if available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+combined_model.to(device)
+
+# Print model summary
+summary(combined_model, (15, 40, 40))

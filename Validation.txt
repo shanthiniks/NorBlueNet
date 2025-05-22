@@ -1,0 +1,50 @@
+#validating
+# Load the best saved model
+combined_model = CombinedModel()
+combined_model.load_state_dict(torch.load('Project/models/Testing_SSRN_with_PCA-15.pth', weights_only=True))
+combined_model.eval()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+combined_model.to(device)
+
+# Plotting training and validation metrics
+plt.figure(figsize=(12, 10))
+
+plt.subplot(2, 2, 1)
+plt.plot(range(1, len(train_loss_list) + 1), train_loss_list, label='Training Loss')
+plt.plot(range(1, len(val_loss_list) + 1), val_loss_list, label='Validation Loss')
+plt.title('Training and Validation Loss over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True)
+
+plt.subplot(2, 2, 2)
+plt.plot(range(1, len(train_r2s) + 1), train_r2s, label='Training R²')
+plt.plot(range(1, len(val_r2s) + 1), val_r2s, label='Validation R²')
+plt.title('Training and Validation R² over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('R² Score')
+plt.legend()
+plt.grid(True)
+
+plt.subplot(2, 2, 3)
+plt.plot(range(1, len(train_rmses) + 1), train_rmses, label='Training RMSE')
+plt.plot(range(1, len(val_rmses) + 1), val_rmses, label='Validation RMSE')
+plt.title('Training and Validation RMSE over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('RMSE')
+plt.legend()
+plt.grid(True)
+
+plt.subplot(2, 2, 4)
+plt.plot(range(1, len(train_rpds) + 1), train_rpds, label='Training RPD')
+plt.plot(range(1, len(val_rpds) + 1), val_rpds, label='Validation RPD')
+plt.title('Training and Validation RPD over Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('RPD')
+plt.legend()
+plt.grid(True)
+
+plt.tight_layout()
+plt.savefig("Training_Validation_Metrics.png")
+plt.show()
