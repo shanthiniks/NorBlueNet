@@ -5,13 +5,11 @@
  and transformer layers for predicting the SSC values in blueberries which synergistically leverages local and
  global feature extraction capabilities. This research pioneers the application of a tailored model to accurately
  predict SSC in Norwegian wild blueberries, overcoming the challenges posed by their miniature size.<br><br>
- This code is based on the paper:
-NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries
-Shanthini K.S., Sudhish N. George, Athul Chandran O.V, Jinimol K.M., Keerthana P., Jobin Francis and Sony George.
-
+ 
 This code is based on the paper 
 
-"NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), Computers and Electronics in Agriculture, 235, 110340.
+"NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", 
+Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), Computers and Electronics in Agriculture, 235, 110340.
 
 https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
 
