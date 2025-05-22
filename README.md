@@ -35,7 +35,7 @@ Pytorch.
 
 This code is based on the paper 
 
-Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025). NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries. Computers and Electronics in Agriculture, 235, 110340.
+Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), "NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", Computers and Electronics in Agriculture, 235, 110340.
 
 https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
 
