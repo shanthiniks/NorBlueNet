@@ -31,6 +31,17 @@ Pytorch.
 
 <img src="Actual_vs_Predicted_Values15.png" alt="" width="400"/> Scatter plot
 
-# Code Release 📂
+# Code  📂
 
-The full code will be made available following the publication of the paper.
+This code is based on the paper 
+
+Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025). NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries. Computers and Electronics in Agriculture, 235, 110340.
+
+https://authors.elsevier.com/a/1kvgAcFCSf4oo    or
+
+https://www.sciencedirect.com/science/article/pii/S0168169925004466
+
+
+
+
+    
