@@ -1,0 +1,64 @@
+import torch
+import numpy as np
+import time
+from torch.utils.data import DataLoader, TensorDataset
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Load the best saved model
+combined_model = CombinedModel()
+combined_model.load_state_dict(torch.load('Project/models/Testing_SSRN_with_PCA-15.pth', weights_only=True))
+combined_model.eval()
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+combined_model.to(device)
+
+# Perform an 80/20 split on the dataset 
+hdf5_data, csv_values, hdf5_filenames, csv_data = load_dataset(hdf5_folder_path, csv_file_path, num_components)
+# Convert to numpy arrays for easier handling
+hdf5_data = np.array(hdf5_data)
+csv_values = np.array(csv_values)
+
+# Randomly shuffle indices
+num_samples = hdf5_data.shape[0]
+indices = np.random.permutation(num_samples)
+
+# Take 20% of the data for testing
+split_index = int(num_samples * 0.2)
+test_indices = indices[:split_index]
+
+# Prepare test data tensors using only the selected indices
+X_test_tensor = torch.tensor(hdf5_data[test_indices], dtype=torch.float32).permute(0, 3, 1, 2)  # Adjust dimensions if needed
+y_test_tensor = torch.tensor(csv_values[test_indices], dtype=torch.float32)
+
+# Create DataLoader for test data
+test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+
+# Testing phase
+combined_model.eval()
+test_predictions = []
+test_targets = []
+
+# Start timing for model inference
+start_time = time.time()  # Record start time
+print(f"Start testing at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(start_time))}")
+
+with torch.no_grad():
+    for data, target in test_loader:
+        data, target = data.to(device), target.to(device)  # Move data to device
+        output = combined_model(data)
+        test_predictions.extend(output.detach().cpu().numpy().flatten())
+        test_targets.extend(target.detach().cpu().numpy().flatten())
+
+# End timing for model inference
+end_time = time.time()  # Record end time
+print(f"End testing at {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(end_time))}")
+print(f"Total time taken for testing: {end_time - start_time:.2f} seconds")
+
+# Calculate test metrics
+test_r2 = calculate_r2(np.array(test_targets), np.array(test_predictions))
+test_rmse = calculate_rmse(np.array(test_targets), np.array(test_predictions))
+test_rpd = calculate_rpd(np.array(test_targets), np.array(test_predictions))
+
+print(f"Test R²: {test_r2:.2f}, Test RMSE: {test_rmse:.4f}, Test RPD: {test_rpd:.4f}")
+
