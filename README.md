@@ -1,12 +1,13 @@
-# Hybrid CNN-transformer model for SSC prediction in Norwegian wild blueberries 🍇📊
+# NorBlueNet - Hybrid CNN-transformer model for SSC prediction in Norwegian wild blueberries 🍇📊
  
   Soluble solids content (SSC), an accepted measure of sweetness, is an important quality attribute for blueberries.
   A new hybrid deep learning (DL) model, NorBlueNet, is developed, integrating CNN
  and transformer layers for predicting the SSC values in blueberries which synergistically leverages local and
- global feature extraction capabilities. This research pioneers the application of a tailored model to accurately
+ global feature extraction capabilities. The proposed integration facilitates the simultaneous extraction of fine
+grained local features and long-range global dependencies leading to improved predictive performances. This research pioneers the application of a tailored model to accurately
  predict SSC in Norwegian wild blueberries, overcoming the challenges posed by their miniature size.<br><br>
  
-This code is based on the paper 
+The code is based on the paper 
 
 "NorBlueNet: Hyperspectral imaging-based hybrid CNN-transformer model for non-destructive SSC analysis in Norwegian wild blueberries", 
 Shanthini, K. S., George, S. N., OV, A. C., Jinumol, K. M., Keerthana, P., Francis, J., & George, S. (2025), Computers and Electronics in Agriculture, 235, 110340.
@@ -29,6 +30,7 @@ This approach combines the precision of hyperspectral imaging with the predictiv
 
 # Requirements 🔧
 
+Python 
 Pytorch.
 
 # Training
@@ -46,6 +48,7 @@ For executing the code, follow the sequence
 3. Create model
 4. Training
 5. Validation
+6. Testing
    
 
 
